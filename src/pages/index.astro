@@ -21,7 +21,7 @@ const statsit = [
 	{ nimi: 'Kofeiinin sietokyky', arvo: 8, huomio: 'ei kommenttia' },
 ];
 const heikkous = 'Yliyrittäminen ja yliajattelu.';
-const lipukkeet = ['100 % IHMISEN TEKEMÄ (+ VÄHÄN CLAUDEA)', 'EI SISÄLLÄ PLUGINEJA', 'SÄILYTÄ ASIAKKAAN ULOTTUVILLA'];
+const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLLÄ PLUGINEJA', 'SÄILYTÄ ASIAKKAAN ULOTTUVILLA'];
 ---
 
 <Layout title={title} description={description}>
@@ -260,7 +260,7 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ (+ VÄHÄN CLAUDEA)', 'EI SISÄLLÄ PL
 											{p.linkkiTeksti} <span aria-hidden="true">↗</span>
 										</a>
 									)}
-									<p class="mono pieni hieno">{lipukkeet[i]}</p>
+									<p class="mono pieni hieno" set:html={lipukkeet[i]} />
 									<span class="leima mono" aria-hidden="true">Tarkastettu ✓</span>
 								</div>
 								<button type="button" class="lippu-kanta" aria-label={`Repäise lipuke ${i + 1} irti`}>
@@ -297,7 +297,7 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ (+ VÄHÄN CLAUDEA)', 'EI SISÄLLÄ PL
 			<div class="valilehti mono"><span>yhteys.vcf</span><span>06 / 06</span></div>
 			<div class="arkki-sisa">
 				<h2 id="yhteys-otsikko" class="iso-lause jattiko nouse">
-					Jutellaanko? Ensimmäinen <em>kahvi</em> on minun piikkiini.
+					Jutellaanko? Ensimmäinen <em>kahvi</em> menee minun piikkiini.
 				</h2>
 				<p class="aloitus">Voin aloittaa kuukauden irtisanomisajan jälkeen. Toimistopäivät Katajanokalla sopivat hyvin.</p>
 				<a class="sahkoposti suojattu" href="#yhteys" data-k={emailKoodattu} data-tyyppi="mailto">Sähköposti</a>
@@ -314,7 +314,7 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ (+ VÄHÄN CLAUDEA)', 'EI SISÄLLÄ PL
 					<div><dt>TIETOKANNAT</dt><dd>0</dd></div>
 				</dl>
 				<p class="mono pieni loppu">
-					© 2026 {hakija.nimi}. Yksikään WordPress-asennus ei loukkaantunut tämän sivun teossa. Paitsi se yksi alussa.
+					© 2026 {hakija.nimi}.<br />Yksikään WordPress-asennus ei loukkaantunut tämän sivun teossa. Paitsi se yksi alussa.
 				</p>
 			</div>
 		</section>
