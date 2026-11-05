@@ -59,7 +59,7 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 						Verkkosivut, jotka löytyvät, <em>toimivat</em> ja myyvät.
 					</p>
 					<div class="napit">
-						<a class="nappi" href="#yhteys">Soitetaanko? <span aria-hidden="true">↗</span></a>
+						<a class="nappi" id="soitetaanko" href="#yhteys">Soitetaanko? <span aria-hidden="true">↗</span></a>
 						<a class="nappi nappi-haamu" href="#tehty">Katso työt <span aria-hidden="true">↓</span></a>
 						<a class="nappi nappi-haamu" href="/CV_Roope_Malmberg.pdf" download>
 							CV (PDF) <span aria-hidden="true">⤓</span>
@@ -320,6 +320,9 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 		</section>
 	</main>
 
+	<p class="nopea mono" id="nopea" role="status" aria-live="polite"></p>
+	<a class="ylos" id="ylos" href="#" aria-label="Takaisin sivun alkuun" tabindex="-1"><span aria-hidden="true">↑</span></a>
+
 	<script is:inline>
 		const kello = document.getElementById('kello');
 		const aika = new Intl.DateTimeFormat('fi-FI', { timeZone: 'Europe/Helsinki', hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -336,6 +339,30 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 
 		// Tulostettaessa (Ctrl+P / PDF) kuva ladataan heti, vaikka sitä ei olisi vielä rullattu esiin
 		addEventListener('beforeprint', () => document.querySelectorAll('img[loading="lazy"]').forEach((i) => (i.loading = 'eager')));
+
+		// Pääsiäismuna: jos "Soitetaanko?" painetaan heti, sivu ilahtuu.
+		// Aika lasketaan siitä, kun intro on suljettu (tai sivun latauksesta, jos introa ei näytetty).
+		let alku = performance.now();
+		document.getElementById('intro')?.addEventListener('close', () => (alku = performance.now()));
+		const nopea = document.getElementById('nopea');
+		document.getElementById('soitetaanko').addEventListener('click', () => {
+			if (performance.now() - alku > 8000) return;
+			nopea.textContent = 'Ai näin nopeasti? Hyvä merkki.';
+			nopea.classList.add('nakyy');
+			setTimeout(() => nopea.classList.remove('nakyy'), 3200);
+		});
+
+		// Takaisin ylös -nappi näkyy, kun sivun yläosa on rullattu ohi
+		const ylos = document.getElementById('ylos');
+		new IntersectionObserver(([e]) => {
+			ylos.classList.toggle('nakyy', !e.isIntersecting);
+			ylos.tabIndex = e.isIntersecting ? -1 : 0; // piilossa ei saa olla Tab-järjestyksessä
+		}).observe(document.querySelector('.hero'));
+		ylos.addEventListener('click', (e) => {
+			e.preventDefault();
+			scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+			document.querySelector('.hero a, .hero button')?.focus({ preventScroll: true });
+		});
 
 		// Keräilykortti kallistuu ja kiiltää hiiren mukaan
 		const tcg = document.querySelector('.tcg');
@@ -1573,6 +1600,70 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 		}
 	}
 
+	/* Pääsiäismuna-kupla ja Takaisin ylös -nappi */
+	.nopea {
+		position: fixed;
+		left: 50%;
+		bottom: 1.5rem;
+		z-index: 40;
+		margin: 0;
+		padding: 0.8rem 1.2rem;
+		background: var(--kerma);
+		color: var(--muste);
+		border-radius: 999px;
+		box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+		font-size: 0.85rem;
+		white-space: nowrap;
+		translate: -50% 1rem;
+		opacity: 0;
+		pointer-events: none;
+		transition:
+			opacity 0.25s,
+			translate 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+	}
+	.nopea::before {
+		content: '● ';
+		color: #c8201a;
+	}
+	.nopea.nakyy {
+		opacity: 1;
+		translate: -50% 0;
+	}
+	.ylos {
+		position: fixed;
+		right: clamp(1rem, 3vw, 1.75rem);
+		bottom: clamp(1rem, 3vw, 1.75rem);
+		z-index: 30;
+		display: grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		background: var(--muste);
+		color: var(--kerma);
+		font-size: 1.3rem;
+		text-decoration: none;
+		/* vaalea rengas: erottuu sekä vaalealla että tummalla pohjalla */
+		box-shadow:
+			0 0 0 2px rgb(242 237 228 / 0.7),
+			0 8px 24px rgb(0 0 0 / 0.25);
+		opacity: 0;
+		translate: 0 0.75rem;
+		pointer-events: none;
+		transition:
+			opacity 0.25s,
+			translate 0.25s,
+			background 0.2s;
+	}
+	.ylos.nakyy {
+		opacity: 1;
+		translate: 0 0;
+		pointer-events: auto;
+	}
+	.ylos:hover {
+		background: var(--punainen);
+	}
+
 	/* Tulostus: siisti, mustavalkoinen A4-versio esim. rekrytoijan PDF:ää varten */
 	@media print {
 		@page {
@@ -1597,6 +1688,8 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 		.palkki,
 		.napit,
 		.maisema,
+		.ylos,
+		.nopea,
 		.intro,
 		.skip,
 		.lippu-kanta,
