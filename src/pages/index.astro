@@ -263,7 +263,7 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 									<p class="mono pieni hieno" set:html={lipukkeet[i]} />
 									<span class="leima mono" aria-hidden="true">Tarkastettu ✓</span>
 								</div>
-								<button type="button" class="lippu-kanta" aria-label={`Repäise lipuke ${i + 1} irti`}>
+								<button type="button" class="lippu-kanta" aria-label={`Repäise tästä 0${i + 1}`}>
 									<span class="mono pystyyn">REPÄISE TÄSTÄ</span>
 									<span class="viivakoodi" />
 									<span class="mono">0{i + 1}</span>
@@ -424,7 +424,8 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 	:root {
 		--kerma: #f2ede4;
 		--muste: #121212;
-		--punainen: #d7261e;
+		/* syvempi punainen: pieni punainen teksti läpäisee WCAG AA -kontrastin kermalla */
+		--punainen: #c8201a;
 		--harmaa: #6b665e;
 		--sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 		--serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
@@ -724,11 +725,13 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 	.arkki-punainen {
 		background: var(--punainen);
 		color: #fff;
-		--harmaa: rgb(255 255 255 / 0.75);
+		--harmaa: #fde8e6; /* lähes valkoinen: kontrasti punaisella riittää (WCAG AA) */
 	}
 	.arkki-musta {
 		background: var(--muste);
 		color: var(--kerma);
+		/* tummalla pohjalla vaaleampi punainen, jotta pieni teksti erottuu */
+		--punainen: #ff5a4f;
 		--harmaa: #a39d93;
 	}
 	.valilehti {
@@ -865,19 +868,18 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 		font-weight: 700;
 		animation: humina 2.4s ease-in-out infinite;
 	}
+	/* Sävyt riittävän tummia luettavuuden (WCAG AA) vuoksi, hehku tulee varjosta */
 	.sith {
-		color: #e8150b;
+		color: #b0120a;
 		text-shadow:
-			0 0 2px #ff6a5f,
-			0 0 8px rgb(255 30 10 / 0.75),
-			0 0 18px rgb(255 30 10 / 0.45);
+			0 0 6px rgb(255 40 20 / 0.45),
+			0 0 16px rgb(255 40 20 / 0.3);
 	}
 	.jedi {
-		color: #1f7bff;
+		color: #0a52bf;
 		text-shadow:
-			0 0 2px #8cc2ff,
-			0 0 8px rgb(40 140 255 / 0.75),
-			0 0 18px rgb(40 140 255 / 0.45);
+			0 0 6px rgb(40 140 255 / 0.45),
+			0 0 16px rgb(40 140 255 / 0.3);
 		animation-delay: -1.2s;
 	}
 	@keyframes humina {
@@ -1151,7 +1153,6 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 	}
 	.polku .vuosi {
 		display: block;
-		opacity: 0.8;
 	}
 	.polku strong {
 		display: block;
@@ -1161,7 +1162,6 @@ const lipukkeet = ['100 % IHMISEN TEKEMÄ<br />(+ VÄHÄN CLAUDEA)', 'EI SISÄLL
 	}
 	.polku .selite {
 		display: block;
-		opacity: 0.85;
 		font-size: 1rem;
 	}
 	.seuraava .piste-ympyra {

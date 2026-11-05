@@ -4,7 +4,7 @@ import sharp from 'sharp';
 
 const kerma = '#f2ede4';
 const muste = '#121212';
-const punainen = '#d7261e';
+const punainen = '#c8201a';
 const sans = "Helvetica Neue, Helvetica, Arial, sans-serif";
 const mono = "Menlo, Monaco, Courier New, monospace";
 const serif = "Iowan Old Style, Palatino, Georgia, serif";
