@@ -8,6 +8,8 @@ interface Props {
 
 const { title, description } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? hakija.sivunOsoite).href;
+// Jakoesikatselukuva (luodaan: node scripts/og-kuva.mjs)
+const ogKuva = new URL('/og-kuva.png', Astro.site ?? hakija.sivunOsoite).href;
 
 // Rakenteinen data hakukoneille ja AI-hauille (schema.org)
 const jsonLd = {
@@ -46,7 +48,12 @@ const jsonLd = {
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonical} />
-		<meta name="twitter:card" content="summary" />
+		<meta property="og:image" content={ogKuva} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="Roope Malmberg: hakemus, Oman median asiantuntija @ Julkee x Lempee." />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:image" content={ogKuva} />
 
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
