@@ -1,0 +1,74 @@
+---
+import { hakija, osaaminen } from '../data/hakija';
+
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? hakija.sivunOsoite).href;
+
+// Rakenteinen data hakukoneille ja AI-hauille (schema.org)
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'ProfilePage',
+	url: canonical,
+	name: title,
+	description,
+	inLanguage: 'fi',
+	mainEntity: {
+		'@type': 'Person',
+		name: hakija.nimi,
+		jobTitle: hakija.titteli,
+		url: canonical,
+		address: { '@type': 'PostalAddress', addressLocality: hakija.paikkakunta, addressCountry: 'FI' },
+		sameAs: [hakija.linkedin, hakija.github],
+		knowsAbout: [...osaaminen.map((o) => o.otsikko), 'Astro', 'GEO', 'AEO', 'CRM', 'Markkinoinnin automaatio'],
+	},
+};
+---
+
+<!doctype html>
+<html lang="fi">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		<meta name="author" content={hakija.nimi} />
+		<meta name="color-scheme" content="light" />
+		<meta name="theme-color" content="#f2ede4" />
+
+		<meta property="og:type" content="profile" />
+		<meta property="og:locale" content="fi_FI" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta name="twitter:card" content="summary" />
+
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+	</head>
+	<body>
+		<a class="skip" href="#sisalto">Siirry sisältöön</a>
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	.skip {
+		position: absolute;
+		left: 1rem;
+		top: -3rem;
+		z-index: 50;
+		background: #121212;
+		color: #f2ede4;
+		padding: 0.5rem 1rem;
+		font: 600 0.9rem system-ui, sans-serif;
+	}
+	.skip:focus {
+		top: 1rem;
+	}
+</style>

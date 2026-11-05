@@ -1,0 +1,475 @@
+---
+// WordPress-intro: musta ruutu ja ilmoitus, jonka voi särkeä. Näytetään kerran per käynti.
+---
+
+<dialog id="intro" class="intro" aria-labelledby="wp-otsikko" aria-describedby="wp-vihje">
+	<div class="wp-ilmoitus" id="wp">
+		<div class="wp-valilehti"><span>wp-admin/päivitykset</span><span>⚠ Varoitus</span></div>
+		<div class="wp-sisalto">
+			<p class="wp-otsikko" id="wp-otsikko">
+				WordPress: <span id="wp-maara">37</span> lisäosaa odottaa päivitystä.
+			</p>
+			<p class="wp-teksti" id="wp-teksti">Kolme niistä rikkoo sivun. Arvaa mitkä.</p>
+			<div class="wp-napit">
+				<button type="button" class="wp-nappi wp-nappi-haamu" id="wp-myohemmin">Päivitä myöhemmin</button>
+				<button type="button" class="wp-nappi" id="wp-tuhoa" autofocus>🔨 Tuhoa</button>
+			</div>
+		</div>
+	</div>
+	<p class="intro-vihje" id="wp-vihje">Älä huoli, tämä kuuluu hakemukseen.</p>
+	<p class="intro-tulos" id="wp-tulos" hidden>Purettu <em>100 %</em><span class="dot">.</span></p>
+	<button type="button" class="intro-ohita" id="wp-ohita">Ohita (Esc)</button>
+</dialog>
+<script is:inline>
+	let nahty = false;
+	try {
+		nahty = sessionStorage.getItem('wp-tuhottu');
+	} catch {}
+	if (!nahty) document.getElementById('intro').showModal();
+</script>
+
+<script is:inline>
+	const intro = document.getElementById('intro');
+	const $ = (id) => document.getElementById(id);
+	const sulje = () => {
+		try {
+			sessionStorage.setItem('wp-tuhottu', '1');
+		} catch {}
+		intro.classList.add('poistuu');
+		setTimeout(() => intro.close(), 500);
+	};
+	intro.addEventListener('cancel', (e) => {
+		e.preventDefault();
+		sulje();
+	});
+	$('wp-ohita').addEventListener('click', sulje);
+	// Lasi särkyy iskukohdasta: säröt piirtyvät, kortti hajoaa säteittäisiksi
+	// sirpaleiksi, jotka pyörivät 3D:nä ja putoavat painovoiman mukana.
+	const sarje = (x, y) => {
+		const kortti = $('wp');
+		const r = kortti.getBoundingClientRect();
+		const rnd = (a, b) => a + Math.random() * (b - a);
+		const ix = ((x - r.left) / r.width) * 100;
+		const iy = ((y - r.top) / r.height) * 100;
+		const reuna = (a) => {
+			const dx = Math.cos(a), dy = Math.sin(a);
+			const t = Math.min(dx > 0 ? (100 - ix) / dx : dx < 0 ? -ix / dx : Infinity, dy > 0 ? (100 - iy) / dy : dy < 0 ? -iy / dy : Infinity);
+			return [ix + dx * t, iy + dy * t];
+		};
+
+		// Murtumakuvio: säteet (myös kulmiin) ja kolme epäsäännöllistä rengasta
+		const kulmat = [[0, 0], [100, 0], [100, 100], [0, 100]].map(([px, py]) => Math.atan2(py - iy, px - ix));
+		for (let i = 0; i < 12; i++) kulmat.push(((i + rnd(0.15, 0.85)) / 12) * 2 * Math.PI - Math.PI);
+		kulmat.sort((a, b) => a - b);
+		const reunat = kulmat.map(reuna);
+		const renkaat = [rnd(0.12, 0.2), rnd(0.35, 0.5), 1].map((k, ri) =>
+			reunat.map(([px, py]) => {
+				const kk = ri === 2 ? 1 : k * rnd(0.75, 1.25);
+				return [ix + (px - ix) * kk, iy + (py - iy) * kk];
+			}),
+		);
+		const palat = [];
+		reunat.forEach((_, i) => {
+			const j = (i + 1) % reunat.length;
+			palat.push([[ix, iy], renkaat[0][i], renkaat[0][j]]);
+			for (let ri = 1; ri < 3; ri++) {
+				const q = [renkaat[ri - 1][i], renkaat[ri][i], renkaat[ri][j], renkaat[ri - 1][j]];
+				if (ri === 2 && Math.random() < 0.55) palat.push([q[0], q[1], q[2]], [q[0], q[2], q[3]]);
+				else palat.push(q);
+			}
+		});
+
+		// 1. Isku: välähdys, kortti nytkähtää ja säröt piirtyvät
+		const valahdus = document.createElement('div');
+		valahdus.className = 'valahdus';
+		Object.assign(valahdus.style, { left: x + 'px', top: y + 'px' });
+		kortti.animate([{ transform: 'none' }, { transform: 'scale(0.985) translate(1px, -1px)' }, { transform: 'none' }], { duration: 120 });
+		const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+		svg.setAttribute('class', 'sarot');
+		svg.setAttribute('viewBox', '0 0 100 100');
+		svg.setAttribute('preserveAspectRatio', 'none');
+		Object.assign(svg.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+		const viiva = (pts) => pts.map((p) => p.join(' ')).join(' L');
+		const polut = reunat
+			.map((p, i) => `M${ix} ${iy} L${viiva([renkaat[0][i], renkaat[1][i], p])}`)
+			.concat([0, 1].map((ri) => `M${viiva(renkaat[ri])} Z`));
+		svg.innerHTML = polut
+			.map((d) => `<path class="varjo" pathLength="1" vector-effect="non-scaling-stroke" d="${d}"/><path pathLength="1" vector-effect="non-scaling-stroke" d="${d}"/>`)
+			.join('');
+		intro.append(svg, valahdus);
+
+		// 2. Hajoaminen
+		setTimeout(() => {
+			svg.remove();
+			kortti.style.visibility = 'hidden';
+			intro.animate(
+				[{ transform: 'none' }, { transform: 'translate(-7px, 4px)' }, { transform: 'translate(6px, -4px)' }, { transform: 'translate(-3px, 2px)' }, { transform: 'none' }],
+				{ duration: 280 },
+			);
+			const lavistaja = Math.hypot(r.width, r.height);
+			for (const pala of palat) {
+				const kx = pala.reduce((a, p) => a + p[0], 0) / pala.length;
+				const ky = pala.reduce((a, p) => a + p[1], 0) / pala.length;
+				const kehys = document.createElement('div');
+				kehys.className = 'sirpale';
+				Object.assign(kehys.style, {
+					left: r.left + 'px',
+					top: r.top + 'px',
+					width: r.width + 'px',
+					height: r.height + 'px',
+					transformOrigin: `${kx}% ${ky}%`,
+				});
+				const kopio = kortti.cloneNode(true);
+				kopio.querySelectorAll('[id]').forEach((e) => e.removeAttribute('id'));
+				kopio.removeAttribute('id');
+				kopio.setAttribute('aria-hidden', 'true');
+				Object.assign(kopio.style, { visibility: 'visible', animation: 'none', clipPath: `polygon(${pala.map(([a, b]) => `${a}% ${b}%`).join(',')})` });
+				kehys.append(kopio);
+				intro.append(kehys);
+
+				const dx = ((kx - ix) * r.width) / 100, dy = ((ky - iy) * r.height) / 100;
+				const et = Math.hypot(dx, dy) || 1;
+				const lahella = 1 - Math.min(et / lavistaja, 1);
+				const nopeus = rnd(220, 520) * (0.4 + lahella);
+				const vx = (dx / et) * nopeus, vy = (dy / et) * nopeus * 0.6 - rnd(60, 220);
+				const g = rnd(1100, 1600);
+				const [rx, ry, rz, z] = [rnd(-500, 500), rnd(-500, 500), rnd(-160, 160), rnd(-120, 260)];
+				const kesto = rnd(1100, 1700);
+				const kehykset = [];
+				for (let s = 0; s <= 10; s++) {
+					const f = s / 10, t = (f * kesto) / 1000;
+					kehykset.push({
+						transform: `perspective(900px) translate3d(${vx * t}px, ${vy * t + (g * t * t) / 2}px, ${z * f}px) rotateX(${rx * f}deg) rotateY(${ry * f}deg) rotateZ(${rz * f}deg)`,
+						filter: `brightness(${1 + 0.4 * Math.sin(f * rnd(6, 12))}) drop-shadow(0 0 1px rgb(255 255 255 / 0.9))`,
+						opacity: f < 0.6 ? 1 : 1 - (f - 0.6) / 0.4,
+					});
+				}
+				kehys.animate(kehykset, { duration: kesto, delay: (1 - lahella) * 80, fill: 'both' });
+			}
+
+			// Pienet lasinmurut
+			for (let i = 0; i < 30; i++) {
+				const muru = document.createElement('div');
+				muru.className = 'muru';
+				const koko = rnd(3, 11);
+				Object.assign(muru.style, { left: x + 'px', top: y + 'px', width: koko + 'px', height: koko + 'px' });
+				intro.append(muru);
+				const a = rnd(0, 2 * Math.PI), v = rnd(300, 900), g = 1600, kesto = rnd(500, 1000);
+				const vx = Math.cos(a) * v, vy = Math.sin(a) * v - 250;
+				const kehykset = [];
+				for (let s = 0; s <= 6; s++) {
+					const f = s / 6, t = (f * kesto) / 1000;
+					kehykset.push({ transform: `translate(${vx * t}px, ${vy * t + (g * t * t) / 2}px) rotate(${f * 720}deg)`, opacity: 1 - f });
+				}
+				muru.animate(kehykset, { duration: kesto, fill: 'both' });
+			}
+		}, 200);
+	};
+	let tuhottu = false;
+	$('wp-tuhoa').addEventListener('click', (e) => {
+		if (tuhottu) return;
+		tuhottu = true;
+		const nappi = e.currentTarget.getBoundingClientRect();
+		const x = e.clientX || nappi.left + nappi.width / 2;
+		const y = e.clientY || nappi.top + nappi.height / 2;
+		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return sulje();
+		sarje(x, y);
+		setTimeout(() => {
+			$('wp').hidden = true;
+			$('wp-vihje').hidden = true;
+			$('wp-tulos').hidden = false;
+		}, 1000);
+		setTimeout(sulje, 2300);
+	});
+	const viestit = [
+		'Niin sanoit viimeksikin.',
+		'No nyt tuli kaksi uutta päivitystä lisää.',
+		'Nyt sivu hajosi kokonaan. Olisiko jo aika vaihtaa muualle?',
+	];
+	let kerrat = 0;
+	let karkuun = 0;
+	let koti = null; // napin alkuperäinen paikka, josta siirrot lasketaan
+	const myohemmin = $('wp-myohemmin');
+	// Viimeisen viestin jälkeen nappi pakenee hiirtä, kunnes väsyy.
+	const pakene = (e) => {
+		if (kerrat < viestit.length || myohemmin.dataset.vasynyt) return;
+		e.preventDefault();
+		if (++karkuun > 7) {
+			myohemmin.dataset.vasynyt = '1';
+			myohemmin.textContent = 'Okei, väsyin. Tuhoa vain.';
+			return;
+		}
+		const b = myohemmin.getBoundingClientRect();
+		koti ??= b;
+		const px = e.clientX || b.left + b.width / 2;
+		const py = e.clientY || b.top + b.height / 2;
+		// Uusi paikka: kaukana hiirestä ja joko kokonaan kortin sisällä tai kokonaan sen ulkopuolella
+		const k = $('wp').getBoundingClientRect();
+		const sisalla = (x, y) => x >= k.left && y >= k.top && x + b.width <= k.right && y + b.height <= k.bottom;
+		const ulkona = (x, y) => x + b.width <= k.left || x >= k.right || y + b.height <= k.top || y >= k.bottom;
+		let x, y, yritys = 0;
+		do {
+			x = 16 + Math.random() * (innerWidth - b.width - 32);
+			y = 16 + Math.random() * (innerHeight - b.height - 32);
+		} while ((Math.hypot(x + b.width / 2 - px, y + b.height / 2 - py) < 220 || !(sisalla(x, y) || ulkona(x, y))) && ++yritys < 60);
+		myohemmin.style.translate = `${x - koti.left}px ${y - koti.top}px`;
+		// Tummalla taustalla nappi vaihtaa värinsä, jotta se näkyy
+		myohemmin.classList.toggle('ulkona', !sisalla(x, y));
+	};
+	myohemmin.addEventListener('pointerenter', pakene);
+	myohemmin.addEventListener('pointerdown', pakene);
+	myohemmin.addEventListener('click', (e) => {
+		if (myohemmin.dataset.vasynyt) return $('wp-tuhoa').click();
+		if (kerrat === viestit.length) return pakene(e);
+		$('wp-maara').textContent = [38, 40, 42][kerrat++];
+		$('wp-teksti').textContent = viestit[kerrat - 1];
+	});
+</script>
+
+<style is:global>
+	/* Sama ilme kuin sivulla: kerma, muste, punainen; sans + kursiivi serif + mono */
+	.intro {
+		--kerma: #f2ede4;
+		--muste: #121212;
+		--punainen: #d7261e;
+		--harmaa: #6b665e;
+		--serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+		--mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+		border: 0;
+		padding: 1.25rem;
+		margin: 0;
+		width: 100%;
+		height: 100%;
+		max-width: none;
+		max-height: none;
+		background: transparent;
+		color: var(--kerma);
+		font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+		line-height: 1.6;
+	}
+	.intro[open] {
+		display: grid;
+		place-items: center;
+		align-content: center;
+		gap: 2rem;
+	}
+	.intro::backdrop {
+		background: #121212;
+	}
+	.intro p {
+		margin: 0 0 1em;
+	}
+	.intro em {
+		font-family: var(--serif);
+		font-style: italic;
+		font-weight: 400;
+	}
+	.intro .dot {
+		color: var(--punainen);
+	}
+	.intro :focus-visible {
+		outline: 3px solid var(--punainen);
+		outline-offset: 3px;
+	}
+	@keyframes intro-pomppu {
+		from {
+			transform: translateY(24px) scale(0.96);
+			opacity: 0;
+		}
+	}
+	.poistuu,
+	.poistuu::backdrop {
+		animation: haihdu 0.5s ease-in forwards;
+	}
+	@keyframes haihdu {
+		to {
+			opacity: 0;
+		}
+	}
+
+	/* Ilmoituskortti: kuin sivun arkki välilehtineen */
+	.wp-ilmoitus {
+		width: min(100%, 36rem);
+		color: var(--muste);
+		background: var(--kerma);
+		border-radius: 1.25rem;
+		box-shadow: 0 30px 80px rgb(0 0 0 / 0.5);
+		animation: intro-pomppu 0.6s cubic-bezier(0.2, 0.9, 0.2, 1) 0.2s backwards;
+	}
+	.wp-valilehti {
+		display: flex;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.85rem 1.5rem;
+		border-bottom: 1px solid rgb(18 18 18 / 0.15);
+		font-family: var(--mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	.wp-valilehti span:first-child::before {
+		content: '● ';
+		color: var(--punainen);
+	}
+	.wp-valilehti span:last-child {
+		color: var(--punainen);
+	}
+	.wp-sisalto {
+		padding: 1.5rem 1.5rem 1.6rem;
+	}
+	.wp-otsikko {
+		font-size: clamp(1.5rem, 4vw, 2.1rem);
+		font-weight: 800;
+		line-height: 1.08;
+		letter-spacing: -0.03em;
+		margin-bottom: 0.6rem !important;
+	}
+	.wp-teksti {
+		color: var(--harmaa);
+	}
+	.wp-napit {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+	.wp-nappi {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.75rem 1.3rem;
+		background: var(--muste);
+		color: var(--kerma);
+		border: 1px solid var(--muste);
+		border-radius: 999px;
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
+		transition:
+			background 0.2s,
+			transform 0.2s,
+			color 0.3s,
+			border-color 0.3s,
+			translate 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+	}
+	.wp-nappi:hover {
+		background: var(--punainen);
+		border-color: var(--punainen);
+		color: var(--kerma);
+		transform: translateY(-2px);
+	}
+	.wp-nappi-haamu {
+		background: transparent;
+		color: var(--muste);
+	}
+	.wp-nappi-haamu.ulkona {
+		background: var(--muste);
+		color: var(--kerma);
+		border-color: var(--kerma);
+	}
+	.wp-nappi[data-vasynyt] {
+		position: relative;
+		z-index: 1;
+	}
+
+	.intro-vihje {
+		margin: -0.75rem 0 0 !important;
+		color: #8d877d;
+		font-family: var(--mono);
+		font-size: 0.78rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		text-align: center;
+	}
+	.intro-tulos {
+		font-size: clamp(2.8rem, 10vw, 7rem);
+		font-weight: 800;
+		letter-spacing: -0.04em;
+		line-height: 1;
+		animation: intro-pomppu 0.6s cubic-bezier(0.2, 0.9, 0.2, 1);
+	}
+	.intro-ohita {
+		position: fixed;
+		bottom: 1.25rem;
+		right: 1.25rem;
+		background: none;
+		border: 0;
+		color: #8d877d;
+		font-family: var(--mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		cursor: pointer;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.intro-ohita:hover {
+		color: var(--kerma);
+	}
+
+	/* Särkyminen */
+	.sirpale,
+	.sarot,
+	.muru,
+	.valahdus {
+		position: fixed;
+		margin: 0;
+		pointer-events: none;
+	}
+	.sirpale {
+		will-change: transform, opacity;
+	}
+	.sirpale > .wp-ilmoitus {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		box-shadow: none;
+		background: linear-gradient(125deg, var(--kerma, #f2ede4) 0 40%, #fbf8f2 50%, var(--kerma, #f2ede4) 60%);
+	}
+	.sarot path {
+		fill: none;
+		stroke: #2a2723;
+		stroke-width: 1.1;
+		stroke-linejoin: bevel;
+		stroke-dasharray: 1;
+		stroke-dashoffset: 1;
+		animation: piirra 0.16s ease-out forwards;
+	}
+	.sarot .varjo {
+		stroke: rgb(0 0 0 / 0.12);
+		stroke-width: 4;
+	}
+	@keyframes piirra {
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+	.valahdus {
+		width: 260px;
+		height: 260px;
+		translate: -50% -50%;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgb(255 255 255 / 0.95), rgb(255 220 200 / 0.4) 30%, transparent 65%);
+		animation: valahdus 0.4s ease-out forwards;
+	}
+	@keyframes valahdus {
+		from {
+			transform: scale(0.2);
+			opacity: 1;
+		}
+		to {
+			transform: scale(1.7);
+			opacity: 0;
+		}
+	}
+	.muru {
+		background: linear-gradient(135deg, #fbf8f2, #d8d0c2);
+		clip-path: polygon(50% 0, 100% 100%, 0 70%);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.intro *,
+		.intro::backdrop {
+			animation: none !important;
+		}
+	}
+</style>

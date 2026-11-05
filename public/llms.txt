@@ -1,0 +1,14 @@
+# Roope Malmberg: hakemus, Oman median asiantuntija, Julkee x Lempee
+
+> Roope hakee Julkee x Lempeen Oman median asiantuntijaksi. Osaamisalueet: verkkosivut ja laskeutumissivut, hakukoneoptimointi (myös GEO/AEO eli AI-haku) sekä markkinoinnin järjestelmät (CRM, analytiikka, lomakkeet, automaatiot).
+
+## Sivun osiot
+
+- [Kuka olen](https://hakemus-roope.vercel.app/#kuka): esittely
+- [Mitä olen tehnyt](https://hakemus-roope.vercel.app/#tehty): projektit ja tulokset
+- [Miksi Julkee x Lempee](https://hakemus-roope.vercel.app/#miksi): perustelut
+- [Yhteystiedot](https://hakemus-roope.vercel.app/#yhteys)
+
+## Tekniikka
+
+Astro, Claude Code, GitHub, Vercel. Ei WordPressiä, ei pluginia, ei tietokantaa.
